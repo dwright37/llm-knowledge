@@ -1,0 +1,2 @@
+Bitte zerlegen Sie den folgenden Absatz in eine Liste unabhängiger Fakten. Alle Fakten sollten in einer als Zeichenkette formatierten Python-Liste enthalten sein.
+{content}

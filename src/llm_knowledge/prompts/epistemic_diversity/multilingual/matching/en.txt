@@ -1,0 +1,5 @@
+Consider these English facts:
+{src_facts}.
+Are any facts in the list inferrerable from the following {tgt_lang} facts?
+{tgt_facts}.
+Return either yes or no.

@@ -1,0 +1,2 @@
+Please breakdown the following paragraph into a list of independent facts. Please return the facts as a list. Please do not number the list. Please simply separate each fact by a new line character.
+{content}

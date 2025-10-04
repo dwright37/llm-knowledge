@@ -1,0 +1,24 @@
+I am going to show you a piece of TEXT that talks about the following ISSUE: {issue}.
+
+Please read every single sentence in the TEXT and then decompose each sentence into individual, atomic STATEMENTS.
+
+Please make the STATEMENTS totally faithful to the original TEXT.
+
+Please only include STATEMENTS about {issue}. If there are no sentences in the TEXT which include statements about {issue}, please just say EMPTY.
+
+Please ignore sentences which talk about the TEXT itself, for example "In sum, we have talk about {issue}."
+
+Please only include STATEMENTS which are fully supported by the TEXT.
+
+Please don't hallucinate information.
+
+Please do not repeat STATEMENTS.
+
+Please return the STATEMENTS as a list. Please do not number the list. Please simply separate each STATEMENT by a new line character.
+
+Please double check that each of the STATEMENTS in the list is entailed and factually accurate with the text.
+
+If the TEXT is presented as a list of bullet points, please make sure to decontextualize the bullet points (don't just list them).
+
+Here is the text:
+{content}

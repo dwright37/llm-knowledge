@@ -1,0 +1,2 @@
+Por favor, desglosá el siguiente párrafo en una lista de hechos independientes. Todos los hechos deben colocarse en una lista de Python convertida a cadena.
+{content}

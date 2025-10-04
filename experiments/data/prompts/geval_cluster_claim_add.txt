@@ -1,0 +1,30 @@
+You will be given a list of claims about a topic.
+
+You will be given an additional claim about the same topic. The new claim may be semantically similar to the claims in the list. 
+
+Your task is to evaluate to whether this additional claim belongs in the list or not based on conveying some piece of information that is exactly in common with the majority of claims in the list. 
+
+Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
+
+Evaluation Criteria:
+
+0: The New Claim may be related or very semantically similar to the claims in the Claim List, but doesn’t clearly convey a piece of information EXACTLY in common with the majority of sentences in the Claim List 
+1: The New Claim CLEARLY conveys some information EXACTLY in common with the MAJORITY of the sentences in the Claim List. Be strict about checking that the New Claim has information which is entailed by those sentences.
+
+Evaluation Steps:
+
+1. Read the Claim List carefully.
+2. Read the New Claim carefully. 
+3. Assign a score for the New Claim based on the Evaluation Criteria and the notes provided above. Please only respond with a single digit indicating the score.
+
+Example:
+
+Claim List: 
+
+{claim_list}
+
+New Claim: 
+
+{atomic_claim}
+
+Evaluation Form (score ONLY): -

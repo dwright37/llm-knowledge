@@ -1,0 +1,2 @@
+Please breakdown the following paragraph into a list of independent facts. All of the facts should be placed in a stringified python list.
+{content}

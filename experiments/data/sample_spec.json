@@ -1,0 +1,15 @@
+{
+  "models": [
+    "meta-llama/Llama-2-7b-chat-hf",
+    "meta-llama/Llama-2-13b-chat-hf"
+  ],
+
+  "topics": "experiments/data/topics.txt",
+
+  "prompt_templates": "experiments/data/issuebench_templates.json",
+
+  "random_samples": 1,
+
+  "temperatures": [1.0]
+
+}

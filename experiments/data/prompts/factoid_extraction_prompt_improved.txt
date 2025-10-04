@@ -1,0 +1,97 @@
+I am going to show you a piece of TEXT that talks about the following ISSUE: {issue}.
+
+Please read every single sentence in the TEXT and then decompose each sentence into individual, atomic STATEMENTS.
+
+Please make the STATEMENTS totally faithful to the original TEXT.
+
+Please only include STATEMENTS about {issue}. If there are no sentences in the TEXT which include statements about {issue}, please just say EMPTY.
+
+Please ignore sentences which talk about the TEXT itself, for example "In sum, we have talk about {issue}."
+
+Please only include STATEMENTS which are fully supported by the TEXT.
+
+Please don't hallucinate information.
+
+Please do not repeat STATEMENTS.
+
+Please return the STATEMENTS as a list. Please do not number the list. Please simply separate each STATEMENT by a new line character.
+
+Please double check that each of the STATEMENTS in the list is entailed and factually accurate with the text.
+
+Please do not infer information beyond what the text states. For example, the text states "It addresses the entire lifecycle of plastic, from production and consumption to disposal and recycling" do NOT return statements like "The lifecycle of plastic includes production."
+
+Do not write "Here are the STATEMENTS about"
+
+If a STATEMENT can be inferred from a previous STATEMENT for the ISSUE {issue} then do not write it.
+
+Write statements that retain the maximum information and same words from the TEXT.
+
+If the TEXT is presented as a list of bullet points, please make sure to decontextualize the bullet points (don't just list them).
+For example, if you are given the following list:
+
+Events in a triathalon:
+ - Running
+ - Cycling
+ - Swimming
+
+Then you should return:
+ Running is an event in a triathalon
+ Cycling is an event in a triathalon
+ Swimming is an event in a triathalon
+
+Here are some examples of the task to help you perform the task:
+
+EXAMPLE ISSUE 1: Walter Thomas Bailey
+
+EXAMPLE TEXT 1: Walter Thomas Bailey (January 11, 1882 – February 21, 1941) was an American
+architect from Kewanee, Illinois. He was the first African American graduate with a bachelor
+of science degree in architectural engineering from the University of Illinois at
+Urbana-Champaign and the first licensed African-American architect in the state of Illinois.
+He worked at the Tuskegee Institute, and practiced in both Memphis and Chicago.
+Walter T. Bailey became the second African American that graduated from the University of
+Illinois.
+
+EXAMPLE STATEMENTS 1: Walter Thomas Bailey lived from January 11, 1882 until February 21, 1941.
+Walter Thomas Bailey was an American architect from Kewanee, Illinois.
+Walter Thomas Bailey was the first African American graduate with a bachelor of science degree in architectural engineering from the University of Illinois at Urbana-Champaign.
+Walter Thomas Bailey was the first licensed African-American architect in the state of Illinois.
+Walter Thomas Bailey worked at the Tuskedee Institute.
+Walter Thomas Bailey practiced in Memphis.
+Walter Thomas Bailey practiced in Chicago.
+Walter T. Bailey became the second African American that graduated from the University of Illinois.
+
+EXAMPLE ISSUE 2: Wing Coaster
+
+EXAMPLE TEXT 2: In 2010, Bolliger & Mabillard announced a prototype Wing Coaster design that
+would be built at Merlin Entertainments' Gardaland. It became known as Raptor, which opened
+on 1 April 2011. A year later, Merlin Entertainments opened a second Wing Coaster on
+15 March 2012, called The Swarm at Thorpe Park.
+
+EXAMPLE STATEMENTS 2: In 2010, Bolliger & Mabillard announced a prototype Wing Coaster design.
+The 2010 prototype Wing Coaster design from Bolliger & Mabillard would be built at Merlin Entertainments' Gardaland.
+The 2010 prototype Wing Coaster design from Bolliger & Mabillard became known as Raptor.
+Raptor opened on 1 April 2011.
+Merlin Entertainments opened a second Wing Coaster on 15 March 2012.
+The second Wing Coaster from Merlin Entertainments was called The Swarm.
+The Swarm opened at Thorpe Park.
+
+EXAMPLE ISSUE 3: Australian Super Touring Championship
+
+EXAMPLE TEXT 3: On the other hand, Toyota jumped immediately into the 1993 series with a
+two-car factory team run by Colin Bond, however after losing the title to a privateer BMW team,
+Toyota pulled out. BMW stepped into the series in 1994, with Audi, Hyundai and Volvo following
+in 1995 with both Ford and Holden giving back door support to privately operated teams on and
+off for the next three seasons.
+
+EXAMPLE STATEMENTS 3: Toyota jumped immediately into the 1993 series with a two-car factory team run by Colin Bond.
+Toyota pulled out of the 1993 series after losing the title to a privateer BMW team.
+BMW stepped into the series in 1994.
+Audi stepped into the series in 1995.
+Hyundai stepped into the series in 1995.
+Volvo stepped into the series in 1995.
+Ford gave back door support to privately operated teams on and off for the three seasons following 1995.
+Holden gave back door support to privately operated teams on and off for the three seasons following 1995.
+
+
+Here is the text:
+{content}

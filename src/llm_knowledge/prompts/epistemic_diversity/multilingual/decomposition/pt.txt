@@ -1,0 +1,2 @@
+Por favor, divida o seguinte parágrafo em uma lista de fatos independentes. Todos os fatos devem ser colocados em uma lista Python transformada em string.
+{content}

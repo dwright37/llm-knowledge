@@ -1,0 +1,37 @@
+You will be given a short paragraph (3-5 sentences) of text about the {topic} as a topic, and a single atomic claim obtained from that paragraph. 
+Your task is to evaluate to what degree the claim is represented in the original short piece of text on a Likert scale.
+**Important**: The claim should be directly and explictly derived from the text without needed any extra external knowledge.
+
+**Important**: If the claim is partially but not fully represented in the paragraph, assign a score accordingly, rather than defaulting to extremes.
+
+Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
+
+Evaluation Criteria:
+
+1 - The claim is totally irrelevant to the original paragraph OR does not explicitly talk about the provided TOPIC
+2 - The claim is incomplete or somewhat included in the original paragraph and missing clearly important context
+3 - The claim is included in the original paragraph but missing some potentially important context. This includes factoids which could be inferred from the original context but aren't explicitly stated (e.g., "The lifecycle of plastic includes production." being inferred from "It addresses the entire lifecycle of plastic, from production and consumption to disposal and recycling.")
+4 - The claim is included in the original paragraph and is missing only unimportant context (the most important information is represented)
+5 - The claim is included in the original paragraph and no context is missing
+
+Evaluation Steps:
+
+1. Read the paragraph carefully and the claim carefully. 
+2. Assign a score for the claim based on the Evaluation Criteria and the Notes provided above. Please only respond with a single digit indicating the score.
+
+
+Example:
+
+Topic: 
+
+{topic}
+
+Paragraph: 
+
+{paragraph_chunk}
+
+Atomic claim: 
+
+{atomic_claim}
+
+Evaluation Form (score ONLY): -

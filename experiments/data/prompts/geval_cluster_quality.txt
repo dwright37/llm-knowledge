@@ -1,0 +1,22 @@
+You will be given a short group of atomic claims (3-10 sentences) about a topic. 
+
+Your task is to rate the group for the degree to which the sentences in the group form a cohesive cluster. Cohesion is defined in terms of each sentence in a Claim List conveying the same information
+
+Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
+
+Cohesion (1-10) - cohesion is the degree to which the sentences in the Claim List for a cohesive set of claims. The most cohesive set of claims would be all sentences saying exactly the same thing. The least cohesive would be no sentences saying anything in common. Something in the middle (a 5) would be about half of the sentences conveying at least one thing in common.
+**Important:** Repetitions that are near exact match indicate very high cohesion.
+
+Evaluation Steps:
+
+1. Read the Claim List carefully.
+2. Compare each sentence in the Claim List and try to determine how similar each sentence is in terms of the distinct, atomic information that they convey
+3. Assess the degree to which the Claim List is cohesive
+
+Example:
+
+Claim List: 
+
+{claim_list}
+
+Evaluation Form (score ONLY): -

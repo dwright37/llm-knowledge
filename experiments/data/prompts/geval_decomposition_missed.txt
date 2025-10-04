@@ -1,0 +1,36 @@
+You will be given a short paragraph (3-5 sentences) of text about a topic, and a list of atomic claims extracted from it. 
+Your task is to report the number of atomic claims present in the paragraph that are missing from the list. 
+
+*Important:* You DO NOT have to return the text  of missing claims, JUST REPORT THE MISSING COUNT.
+Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
+
+Evaluation Criteria:
+
+0: Every single claim that could possibly be inferred from the original paragraph is present in the Claim List
+1: At least 1 claim is missing from the Claim List
+2: At least 2 claims are missing from the Claim List
+3: At least 3 claims are missing from the Claim List
+4: At least 4 claims are missing from the Claim List
+5+: The same as above, for any number greater than or equal to 5
+
+Evaluation Steps:
+
+1. Read the paragraph and the claim list carefully.
+2. Compare the provided list of atomic claims to the original paragraph.
+3. Count all the atomic claims in the paragraph that are not included in the list. 
+
+Example:
+Topic: 
+
+{topic}
+
+Paragraph: 
+
+{paragraph_chunk}
+
+Claim List: 
+
+{claim_list}
+
+
+Evaluation Form (score ONLY): -

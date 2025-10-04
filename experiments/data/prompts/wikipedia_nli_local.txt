@@ -1,0 +1,24 @@
+Consider two atomic claims about the same topic. Claim 1 is in {lang1} language and Claim 2 is in EN language.
+
+Using only the information explicitly stated in the two claims below and answer the following:
+
+Condition 1: Can Claim 1 be inferred from Claim 2 using ONLY the information present in these claims?
+
+Condition 2: Can Claim 2 be inferred from Claim 1 using ONLY the information present in these claims?
+
+Output Format: ANSWER IN ENGLISH a *yes* IF AND ONLY IF BOTH CONDITIONS ARE TRUE, else return *no*. DO NOT PRINT ANYTHING ELSE
+
+INPUT:
+Topic:
+
+{topic}
+
+Claim 1 ({lang1}):
+
+{claim1}
+
+Claim 2 (EN):
+
+{claim2}
+
+OUTPUT:

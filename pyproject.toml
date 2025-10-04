@@ -1,0 +1,23 @@
+[project]
+name = "llm_knowledge"
+version = "0.0.1"
+authors = [
+  { name="Anonymous", email="anonymous@example.com" },
+]
+description = "Tools to extract, visualize, and quantify latent values and opinions in large language models"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+]
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {gpu = { file = ["requirements-gpu.txt"] }}
+
+[project.urls]
+Homepage = "https://github.com/anonymous/knowledge-collapse"
+Issues = "https://github.com/anonymous/knowledge-collapse/issues"
