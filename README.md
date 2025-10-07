@@ -5,11 +5,13 @@
 
 A python package for extracting knowledge and measuring epistemic diversity in large language models (LLMs).
 
-Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large Language Models" (Wright et al. 2025) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
+Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large Language Models" [(Wright et al. 2025)](https://arxiv.org/pdf/2510.04226) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
 
 </div>
 
 ## Installation
+
+**Note: We are currently working on making installation seamless, but some dependency issues may arise from install vLLM**
 
 The package can be installed in the following ways:
 
@@ -172,7 +174,7 @@ extracting and clustering claims from these outputs, and measuring epistemic div
 - Code for generating the plots in the paper is in `experiments/final_plots.ipynb`
 
 # Citation
-The code in this package is derived from our recent preprint and our [EMNLP Findings 2024 paper](https://aclanthology.org/2024.findings-emnlp.995/):
+The code in this package is derived from [our recent preprint](https://arxiv.org/pdf/2510.04226) and our [EMNLP Findings 2024 paper](https://aclanthology.org/2024.findings-emnlp.995/):
 
 ```
 @article{wright2025epistemicdiversity,
@@ -180,7 +182,7 @@ The code in this package is derived from our recent preprint and our [EMNLP Find
       author={Dustin Wright and Sarah Masud and Jared Moore and Srishti Yadav
                 and Maria Antoniak and Chan Young Park and Isabelle Augenstein},
       year={2025},
-      journal={arXiv preprint arXiv:TODO},
+      journal={arXiv preprint arXiv:2510.04226},
 }
 ```
 
