@@ -14,13 +14,13 @@ Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large 
 We recommend using `uv` for installation to make installing vLLM easier.
 
 ```bash
-$ pip install uv
+pip install uv
 ```
 
 Then, install the base package and vLLM:
 
 ```bash
-$ uv pip install llm-knowledge vllm --torch-backend=auto
+uv pip install llm-knowledge vllm --torch-backend=auto
 ```
 
 Note that vLLM is only needed if you wish to use the bulk generation utilities in the library.
@@ -29,7 +29,7 @@ If you only need the tools for measuring epistemic diversity, you can ignore ins
 Finally, install spacy `en_core_web_sm` as follows:
 
 ```bash
-$ python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_sm
 ```
 
 ## Usage
