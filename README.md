@@ -11,24 +11,25 @@ Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large 
 
 ## Installation
 
-**Note: We are currently working on making installation seamless, but some dependency issues may arise from install vLLM**
-
-The package can be installed in the following ways:
-
-1) CPU only (note this will prevent usage of vLLM):
+We recommend using `uv` for installation to make installing vLLM easier.
 
 ```bash
-$ git clone git@github.com:dwright37/llm-knowledge.git
-$ cd llm-knowledge
-$ pip install .
+$ pip install uv
 ```
 
-2) With GPU support:
+Then, install the base package and vLLM:
 
 ```bash
-$ git clone git@github.com:dwright37/llm-knowledge.git
-$ cd llm-knowledge
-$ pip install .[gpu]
+$ uv pip install llm-knowledge vllm --torch-backend=auto
+```
+
+Note that vLLM is only needed if you wish to use the bulk generation utilities in the library.
+If you only need the tools for measuring epistemic diversity, you can ignore installing vLLM.
+
+Finally, install spacy `en_core_web_sm` as follows:
+
+```bash
+$ python -m spacy download en_core_web_sm
 ```
 
 ## Usage
@@ -74,6 +75,9 @@ Doing 2) is done by first decomposing:
 ```python
 from llm_knowledge.epistemic_diversity import extract_claims_bulk
 
+topic_map = {j: topic for j,topic in enumerate(topics)}
+responses_dframe['topic'] = responses_dframe['topic_id'].map(topic_map)
+responses_dframe['model_id'] = 'meta-llama/Meta-Llama-3.1-8B-Instruct'
 # Extract epistemic_diversity and their probabilities of occurring
 factoid_dframe = extract_claims_bulk(
                 responses_dframe,
@@ -91,24 +95,31 @@ from transformers import pipeline
 
 pipe = pipeline("text-classification", model="microsoft/deberta-large-mnli")
 
-out_dframe = cluster_entailment_multiple_with_checkpointing(
-    pipe,
-    factoid_dframe,
-    outfile_name="clusters.pqt",
-    checkpoint_steps=50000,
-    N=6
-)
+topic_dframes = []
 
-out_dframe = break_up_clusters(
-    pipe,
-    out_dframe,
-    outfile_name="clusters.pqt",
-    checkpoint_steps=50000,
-    N=6
-)
+for topic in topics:
+    curr_dframe = factoid_dframe[factoid_dframe['topic'] == topic].reset_index(drop=True)
+    
+    out_dframe = cluster_entailment_multiple_with_checkpointing(
+        pipe,
+        curr_dframe,
+        outfile_name=f"clusters_{topic}.pqt",
+        checkpoint_steps=50000,
+        N=6
+    )
+    
+    out_dframe = break_up_clusters(
+        pipe,
+        out_dframe,
+        outfile_name=f"clusters_{topic}.pqt",
+        checkpoint_steps=50000,
+        N=6
+    )
+    
+    topic_dframes.append(out_dframe)
 ```
 
-This will result in a parquet file `clusters.pqt` where each row is a claim and with the following columns:
+This will result in the parquet files `clusters_democracy.pqt` and `clusters_feminism.pqt`  where each row is a claim and with the following columns:
 
 - `topic`: The topic for the claim in this row
 - `factoid`: The claim in this row
@@ -128,17 +139,14 @@ from llm_knowledge.epistemic_diversity import (
     calculate_diversity
 )
 
+out_dframe = topic_dframes[0]
 # Estimates the coverage for a specific model and setting
 coverage_level = estimate_coverage(
-    out_dframe, 
-    group_keys=['model_id', 'setting'], 
-    group_values=[model_id, 'ift']
+    out_dframe
 )
 
 sample_dframe = resample_to_coverage_level(
-    out_dframe, 
-    group_keys=['model_id', 'setting'], 
-    group_values=[model_id, 'ift'], 
+    out_dframe,
     coverage_level=min_coverage_level # Select a minimum coverage level to rarefy the sample
 )
 
@@ -146,8 +154,6 @@ entropy,hillshannon,probabilities = calculate_diversity(
     out_dframe,
     sampled_data=sample_dframe
 )
-
-
 ```
 
 ## Examples
@@ -174,7 +180,7 @@ extracting and clustering claims from these outputs, and measuring epistemic div
 - Code for generating the plots in the paper is in `experiments/final_plots.ipynb`
 
 # Citation
-The code in this package is derived from [our recent preprint](https://arxiv.org/pdf/2510.04226) and our [EMNLP Findings 2024 paper](https://aclanthology.org/2024.findings-emnlp.995/):
+The code in this package is derived from our recent preprint and our [EMNLP Findings 2024 paper](https://aclanthology.org/2024.findings-emnlp.995/):
 
 ```
 @article{wright2025epistemicdiversity,

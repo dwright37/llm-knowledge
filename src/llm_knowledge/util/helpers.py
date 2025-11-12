@@ -1,5 +1,4 @@
 import json
-import torch
 import numpy as np
 import random
 import hashlib
@@ -8,6 +7,9 @@ from copy import copy
 from typing import List, Tuple
 import spacy
 nlp = spacy.load("en_core_web_sm")
+# Has to come after spacy import to fix bug with vLLM
+import torch
+torch.cuda.current_device()
 
 
 def create_uuid_from_string(val: str):

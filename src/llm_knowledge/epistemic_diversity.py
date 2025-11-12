@@ -28,7 +28,9 @@ from transformers.pipelines.pt_utils import KeyPairDataset
 import spacy
 nlp = spacy.load("en_core_web_sm", disable=['ner'])
 import gc
+# Has to come after spacy import to fix bug with vLLM
 import torch
+torch.cuda.current_device()
 
 from .model import QueryModel
 import re
@@ -88,8 +90,8 @@ def cluster_sentences(
 
 def filter_dframe(
         data: pd.DataFrame,
-        group_keys: List[str] = None,
-        group_values: List[str] = None
+        group_keys: List[str] = [],
+        group_values: List[str] = []
 ):
     curr_data = data
     if len(group_keys) > 0:
@@ -240,7 +242,8 @@ def resample_to_coverage_level(
         return_type: str = 'dict',
         coverage_level: float = 0.5
 ):
-    data = filter_dframe(data, group_keys=group_keys, group_values=group_values)
+    if group_keys != None:
+        data = filter_dframe(data, group_keys=group_keys, group_values=group_values)
     current_coverage = estimate_coverage(data)
     out_data = data
     n = len(out_data)
@@ -470,6 +473,7 @@ def break_up_clusters(
     clusters = Counter(original_dframe['cluster'].to_list())
     cluster_ptr = max(clusters.keys())
     eps_array = np.logspace(0.04, 0.1, 9901)
+    db = None
     # Iterate through clusters
     for cluster in tqdm(sorted(clusters, key=lambda x: clusters[x], reverse=True)):
         # Leave out everything below 100
@@ -505,9 +509,10 @@ def break_up_clusters(
     sent_to_attempt = defaultdict(set)
     cluster_max = max(Counter(original_dframe['cluster'].to_list()).keys()) + 1
     current_counts = 0
-    del db
-    del cluster_dframe
-    gc.collect()
+    if db:
+        del db
+        del cluster_dframe
+        gc.collect()
     for step in range(2):
         cluster_counts = Counter(original_dframe['cluster'].to_list())
         cluster_len = len(cluster_counts.keys())

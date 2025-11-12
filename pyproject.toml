@@ -1,11 +1,14 @@
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm>=8"]
+
 [project]
 name = "llm_knowledge"
-version = "0.0.1"
+version = "0.1.2"
 authors = [
-  { name="Anonymous", email="anonymous@example.com" },
+  { name="Dustin Wright", email="dw@di.ku.dk" },
 ]
-description = "Tools to extract, visualize, and quantify latent values and opinions in large language models"
-readme = "README.md"
+description = "Tools to extract, visualize, and quantify latent knowledge in large language models"
+readme = "README_pypi.md"
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -16,8 +19,10 @@ dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
-optional-dependencies = {gpu = { file = ["requirements-gpu.txt"] }}
+
+[tool.setuptools.package-data]
+prompts = ["*.txt"]
 
 [project.urls]
-Homepage = "https://github.com/anonymous/knowledge-collapse"
-Issues = "https://github.com/anonymous/knowledge-collapse/issues"
+Homepage = "https://github.com/dwright37/llm-knowledge"
+Issues = "https://github.com/dwright37/llm-knowledge/issues"

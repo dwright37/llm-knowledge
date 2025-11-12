@@ -352,7 +352,7 @@ def get_model(
         openai_credentials: Dict[str, str] = None,
         quant: bool = False,
         download_dir: str = None,
-        max_model_len=None,
+        max_model_len=128000,
         gpu_memory_utilization=0.9,
         parallel=False,
         max_num_seqs=None,
