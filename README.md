@@ -42,7 +42,7 @@ This package is intended to make measuring epistemic diversity in LLMs as easy a
 
 ### Extracting Claim Clusters
 
-Doing 1) is as easy as creating a model, defining a set of prompt templates and topics you are interested in, and generating many outputs for those prompt templates and topics:
+Doing 1) is done by creating a model, defining a set of prompt templates and topics you are interested in, and generating many outputs for those prompt templates and topics:
 
 ```python
 from llm_knowledge.model import get_model
@@ -130,7 +130,7 @@ This will result in the parquet files `clusters_democracy.pqt` and `clusters_fem
 
 ### Measuring Epistemic Divrsity
 
-From a cluster dataframe you can measure coverage and diversity as follows:
+From a cluster dataframe you can then do 3) (measuring coverage and epistemic diversity) as follows:
 
 ```python
 from llm_knowledge.epistemic_diversity import (
