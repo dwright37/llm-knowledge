@@ -1,9 +1,9 @@
 <div align="center">
   
 
-# LLM Knowledge and Epistemic Diversity
+# `llm-knowledge`
 
-#### A python package for measuring which, whose, and how much knowledge LLMs produce.
+#### A python package for extracting knowledge from LLMs and measuring epistemic diversity.
 
 
 Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large Language Models" [(Wright et al. 2025)](https://arxiv.org/pdf/2510.04226) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
