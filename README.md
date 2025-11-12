@@ -1,12 +1,13 @@
 <div align="center">
   
 
-# 🧐`llm_knowledge`🧐
+# LLM Knowledge and Epistemic Diversity
 
 A python package for extracting knowledge and measuring epistemic diversity in large language models (LLMs).
 
 Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large Language Models" [(Wright et al. 2025)](https://arxiv.org/pdf/2510.04226) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
 
+[![ArXiv](https://img.shields.io/badge/ArXiv-2510.04226-B31B1B.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226) &nbsp; [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Coming%20Soon-FFD700.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226)
 </div>
 
 ## Installation
