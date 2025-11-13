@@ -8,7 +8,7 @@
 
 Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large Language Models" [(Wright et al. 2025)](https://arxiv.org/pdf/2510.04226) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
 
-[![ArXiv](https://img.shields.io/badge/ArXiv-2510.04226-B31B1B.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226) &nbsp; [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Coming%20Soon-FFD700.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226) &nbsp; [![PyPI - Version](https://img.shields.io/pypi/v/llm-knowledge)](https://pypi.org/project/llm-knowledge/) &nbsp; [![GitHub License](https://img.shields.io/github/license/dwright37/llm-knowledge)](https://github.com/dwright37/llm-knowledge/blob/main/LICENSE)
+[![ArXiv](https://img.shields.io/badge/ArXiv-2510.04226-B31B1B.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226) &nbsp; [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Coming%20Soon-FFD700.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226) &nbsp; [![PyPI - Version](https://img.shields.io/pypi/v/llm-knowledge)](https://pypi.org/project/llm-knowledge/)
 
 
 
@@ -133,7 +133,7 @@ This will result in the parquet files `clusters_democracy.pqt` and `clusters_fem
 - `setting`: The generation setting (‘ift’ for parametric memory, ‘rag’ for RAG)
 - `cluster`: The cluster ID of the factoid
 
-### Measuring Epistemic Divrsity
+### Measuring Epistemic Diversity
 
 From a cluster dataframe you can then do 3) (measuring coverage and epistemic diversity) as follows:
 
