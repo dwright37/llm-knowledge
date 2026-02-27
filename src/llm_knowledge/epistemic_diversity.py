@@ -269,8 +269,8 @@ def resample_to_coverage_level(
 def calculate_diversity(
         data: pd.DataFrame,
         sampled_data: pd.DataFrame = None,
-        group_keys: List[str] = None,
-        group_values: List[str] = None,
+        group_keys: List[str] = [],
+        group_values: List[str] = [],
         return_type: str = 'dict'
 ):
     probabilities, n_statements = calculate_probabilities(data, sampled_data, group_keys, group_values, return_type)
@@ -319,22 +319,84 @@ def create_factoid_prompt(
     }]
 
 
-def cluster_entailment_multiple_with_checkpointing(
+def _process_nli_batch(
+        entailment_pipeline,
+        inputs: dict,
+        idx_to_samples: dict,
+        clusters_arr: np.ndarray,
+        step: int,
+        cluster_max: int,
+        sent_to_attempt: dict,
+        original_dframe: pd.DataFrame,
+        outfile_name: AnyStr,
+) -> int:
+    """
+    Run NLI inference on a batch of sentence pairs, assign clusters, and write a checkpoint.
+
+    idx_to_samples maps sentence index -> (start_pair_idx, [hypo_idxs]) or None.
+    Modifies clusters_arr and original_dframe in-place.
+    Returns updated cluster_max.
+    """
+    if inputs['text']:
+        dset = Dataset.from_dict(inputs)
+        all_labels = list(tqdm(
+            entailment_pipeline(KeyPairDataset(dset, 'text', 'text_pair'), batch_size=32),
+            total=len(inputs['text']),
+            desc="Performing NLI",
+        ))
+    else:
+        all_labels = []
+
+    for sent_idx, sample_info in tqdm(idx_to_samples.items()):
+        if sample_info is None:
+            cluster = int(clusters_arr[sent_idx])
+        else:
+            start, hypo_idxs = sample_info
+            found = []
+            entailment_counts = defaultdict(int)
+            for k, hypo_idx in enumerate(hypo_idxs):
+                fwd = all_labels[start + 2 * k]
+                bwd = all_labels[start + 2 * k + 1]
+                if fwd['label'] == 'ENTAILMENT':
+                    if bwd['label'] == 'ENTAILMENT':
+                        found.append((
+                            int(clusters_arr[hypo_idx]),
+                            np.log(fwd['score']) + np.log(bwd['score'])
+                        ))
+                    else:
+                        entailment_counts[int(clusters_arr[hypo_idx])] += 1
+            if not found:
+                if step == 0:
+                    cluster = cluster_max
+                    cluster_max += 1
+                else:
+                    cluster = int(clusters_arr[sent_idx])
+            else:
+                cluster = found[int(np.argmax([s for _, s in found]))][0]
+                del sent_to_attempt[sent_idx]
+        clusters_arr[sent_idx] = cluster
+
+    original_dframe['cluster'] = clusters_arr
+    original_dframe.to_parquet(outfile_name, index=False)
+    gc.collect()
+    return cluster_max
+
+
+def cluster_entailment(
         entailment_pipeline,
         original_dframe: pd.DataFrame,
         outfile_name: AnyStr,
         checkpoint_steps=0,
         N=50,
         sim_block_size=1000
-) -> np.ndarray:
+) -> pd.DataFrame:
     """
-    Function to cluster sentences using Natural Language Inference (NLI) based on mutual entailment
-
-    :param entailment_pipeline: The NLI pipeline used to determine entailment between sentences
-    :param embeddings: Numpy array with embeddings used to find similar sentences
-    :param sentences: List of sentences to cluster
-    :param N: Maximum number of hypotheses to consider for each sentence
-    :return: Cluster membership of each sentence in the input list
+    Optimised equivalent of cluster_entailment_multiple_with_checkpointing.
+    Same algorithm; key changes vs the original:
+      - numpy array for cluster tracking avoids pandas .loc overhead in hot loop
+      - index-based hypothesis lookup avoids string-keyed sentence_to_cluster dict
+      - argpartition + masking replaces argsort (O(n) vs O(n log n) per sentence)
+      - (start, hypo_idxs) in idx_to_samples replaces flat global-index list
     """
     sentences = original_dframe['factoid'].to_list()
     embeddings = embed_sentences(sentences)
@@ -344,107 +406,70 @@ def cluster_entailment_multiple_with_checkpointing(
         original_dframe['cluster'] = -1
 
     original_dframe.loc[0, 'cluster'] = 0
+    clusters_arr = original_dframe['cluster'].to_numpy().copy()
     cluster_max = 1
-    sentence_to_cluster = {}
     current_counts = 0
+
     for step in range(2):
-        cluster_counts = Counter(original_dframe['cluster'].to_list())
-        cluster_len = len(cluster_counts.keys())
+        cluster_counts = Counter(clusters_arr.tolist())
+        cluster_len = len(cluster_counts)
         if step > 1 and current_counts - cluster_len <= 10:
             break
         current_counts = cluster_len
+
         idx_to_samples = {}
-        # set up the inputs
-        inputs = {
-            'text': [],
-            'text_pair': []
-        }
-        counter = 0
+        inputs = {'text': [], 'text_pair': []}
+        pair_counter = 0
+
         for j, sent in enumerate(tqdm(sentences)):
             if j % sim_block_size == 0:
-                # Get the cosine similarities (we do it in blocks in order to improve efficiency)
-                similarity_block = cos_sim(embeddings[j:j + 1000], embeddings)
-            # Only do singletons after the first round
-            if cluster_counts[original_dframe.loc[j, 'cluster']] > 1 and step > 0:
+                similarity_block = cos_sim(
+                    embeddings[j:j + sim_block_size], embeddings
+                ).numpy()
+
+            if cluster_counts[int(clusters_arr[j])] > 1 and step > 0:
+                # Already in a multi-member cluster — skip entirely
                 idx_to_samples[j] = None
             else:
-                skip = False
+                skip = step == 0 and int(clusters_arr[j]) != -1
+                if skip:
+                    idx_to_samples[j] = None
+
+                # Build masked similarity vector (copy to avoid mutating the block)
+                sims = similarity_block[j % sim_block_size].copy()
                 if step == 0:
+                    sims[j + 1:] = -np.inf  # backward-only in step 0
+                sims[j] = -np.inf  # never compare a sentence to itself
+                for att in sent_to_attempt[j]:
+                    sims[att] = -np.inf
 
-                    # Skip sentences that are already clustered
-                    if original_dframe.loc[j, 'cluster'] != -1:
-                        sentence_to_cluster[sent] = original_dframe.loc[j, 'cluster']
-                        skip = True
-                        idx_to_samples[j] = None
-                    sims = similarity_block[j % sim_block_size][:j + 1]
-                else:
-                    sims = similarity_block[j % sim_block_size]
+                # O(n) top-N: argpartition then sort only the top-N subset
+                k = min(N, len(sims))
+                top_k_pos = np.argpartition(sims, -k)[-k:]
+                valid = top_k_pos[sims[top_k_pos] > -np.inf]
+                hypo_idxs = valid[np.argsort(sims[valid])[::-1]].tolist()
 
-                order = np.argsort(sims.numpy())[::-1]
-                sort_order = order[order != j]
-                hypo_idxs = []
-                att = 0
-                while len(hypo_idxs) < N and att < len(sort_order):
-                    if sort_order[att] not in sent_to_attempt[j]:
-                        hypo_idxs.append(sort_order[att])
-                    att += 1
                 sent_to_attempt[j].update(hypo_idxs)
                 if not skip:
-                    hypotheses = [sentences[k] for k in hypo_idxs]
-                    idx_to_samples[j] = []
-                    for hypo in hypotheses:
+                    idx_to_samples[j] = (pair_counter, hypo_idxs)
+                    for hypo_idx in hypo_idxs:
+                        hypo = sentences[hypo_idx]
                         inputs['text'].append(sent)
                         inputs['text_pair'].append(hypo)
                         inputs['text'].append(hypo)
                         inputs['text_pair'].append(sent)
-                        idx_to_samples[j].append(counter)
-                        idx_to_samples[j].append(counter + 1)
-                        counter += 2
+                    pair_counter += 2 * len(hypo_idxs)
+
             if j % checkpoint_steps == 0 or j == len(sentences) - 1:
-                dset = Dataset.from_dict(inputs)
-                all_labels = [l for l in tqdm(entailment_pipeline(KeyPairDataset(dset, 'text', 'text_pair'), batch_size=32), total=len(inputs['text']), desc="Performing NLI")]
-                for sent_idx in tqdm(idx_to_samples):
-                    if sent_idx % sim_block_size == 0:
-                        # Get the cosine similarities (we do it in blocks in order to improve efficiency)
-                        print(f"N clusters: {len(Counter(original_dframe['cluster'].to_list()).keys())}")
-                    if idx_to_samples[sent_idx] != None:
-                        found = []
-                        entailment_counts = defaultdict(int)
-                        labels = [all_labels[k] for k in idx_to_samples[sent_idx]]
-                        for idx in range(0, len(labels), 2):
-                            if labels[idx]['label'] == 'ENTAILMENT':
-                                if labels[idx + 1]['label'] == 'ENTAILMENT':
-                                    found.append((sentence_to_cluster[inputs['text_pair'][idx_to_samples[sent_idx][idx]]], np.log(labels[idx]['score']) + np.log(labels[idx + 1]['score'])))
-                                else:
-                                    # Unidirectional entailment, add to counter
-                                    entailment_counts[sentence_to_cluster[inputs['text_pair'][idx_to_samples[sent_idx][idx]]]] += 1
-                        if len(found) == 0:
-                            if step == 0:
-                                cluster = cluster_max
-                                cluster_max += 1
-                            else:
-                                cluster = original_dframe.loc[sent_idx, 'cluster']
-                        else:
-                            cluster_idx = np.argmax([s for c,s in found])
-
-                            cluster = found[cluster_idx][0]
-
-                            del sent_to_attempt[sent_idx]
-                    else:
-                        cluster = original_dframe.loc[sent_idx, 'cluster']
-
-                    original_dframe.loc[sent_idx, 'cluster'] = cluster
-                    sentence_to_cluster[sentences[sent_idx]] = cluster
-                # Checkpoint
-                original_dframe.to_parquet(outfile_name, index=False)
-                counter = 0
+                cluster_max = _process_nli_batch(
+                    entailment_pipeline, inputs, idx_to_samples,
+                    clusters_arr, step, cluster_max, sent_to_attempt,
+                    original_dframe, outfile_name,
+                )
                 idx_to_samples = {}
-                # set up the inputs
-                inputs = {
-                    'text': [],
-                    'text_pair': []
-                }
-                gc.collect()
+                inputs = {'text': [], 'text_pair': []}
+                pair_counter = 0
+                cluster_counts = Counter(clusters_arr.tolist())
 
     return original_dframe
 
@@ -456,13 +481,11 @@ def break_up_clusters(
         checkpoint_steps=0,
         N=50,
         sim_block_size=1000
-) -> np.ndarray:
+) -> pd.DataFrame:
     """
     Function to cluster sentences using Natural Language Inference (NLI) based on mutual entailment
 
     :param entailment_pipeline: The NLI pipeline used to determine entailment between sentences
-    :param embeddings: Numpy array with embeddings used to find similar sentences
-    :param sentences: List of sentences to cluster
     :param N: Maximum number of hypotheses to consider for each sentence
     :return: Cluster membership of each sentence in the input list
     """
@@ -504,117 +527,79 @@ def break_up_clusters(
         # Now reassign all clusters
         for c,idx in zip(new_clusters, indices):
             original_dframe.loc[idx, 'cluster'] = cluster_map[c]
-    # Now go and re-run NLI on the singletons again
-    sentence_to_cluster = {row['factoid']: row['cluster'] for idx, row in original_dframe.iterrows()}
+
+    # Re-run NLI on singletons using the optimised inner loop
+    clusters_arr = original_dframe['cluster'].to_numpy().copy()
     sent_to_attempt = defaultdict(set)
-    cluster_max = max(Counter(original_dframe['cluster'].to_list()).keys()) + 1
+    cluster_max = int(clusters_arr.max()) + 1
     current_counts = 0
     if db:
         del db
         del cluster_dframe
         gc.collect()
+
     for step in range(2):
-        cluster_counts = Counter(original_dframe['cluster'].to_list())
-        cluster_len = len(cluster_counts.keys())
+        cluster_counts = Counter(clusters_arr.tolist())
+        cluster_len = len(cluster_counts)
         if step > 1 and current_counts - cluster_len <= 10:
             break
         current_counts = cluster_len
-        print(len(cluster_counts.keys()))
+        print(cluster_len)
+
         idx_to_samples = {}
-        # set up the inputs
-        inputs = {
-            'text': [],
-            'text_pair': []
-        }
-        counter = 0
-        sent_mask = original_dframe['cluster'].to_numpy() == -1
+        inputs = {'text': [], 'text_pair': []}
+        pair_counter = 0
+        sent_mask = clusters_arr == -1
+
         for j, sent in enumerate(tqdm(sentences)):
             if j % sim_block_size == 0:
-                # Get the cosine similarities (we do it in blocks in order to improve efficiency)
-                similarity_block = cos_sim(embeddings[j:j + 1000], embeddings).numpy()
-            # Only do singletons after the first round
-            if cluster_counts[original_dframe.loc[j, 'cluster']] > 1 and step > 0:
+                similarity_block = cos_sim(
+                    embeddings[j:j + sim_block_size], embeddings
+                ).numpy()
+
+            if cluster_counts[int(clusters_arr[j])] > 1 and step > 0:
                 idx_to_samples[j] = None
             else:
-                skip = False
-                if step == 0:
+                skip = step == 0 and int(clusters_arr[j]) != -1
+                if skip:
+                    idx_to_samples[j] = None
 
-                    if original_dframe.loc[j, 'cluster'] != -1:
-                        sentence_to_cluster[sent] = original_dframe.loc[j, 'cluster']
-                        skip = True
-                        idx_to_samples[j] = None
-                    # Use all of them, we'll skip the ones that aren't clustered
-                    sims = similarity_block[j % sim_block_size]  # cos_sim(embeddings[j], embeddings[:j+1])
-                else:
-                    sims = similarity_block[j % sim_block_size]  # cos_sim(embeddings[j], embeddings)
-
-                sims[sent_mask] = -10000
-                sims[j] = -10000
+                # Build masked similarity vector (copy to avoid mutating the block)
+                sims = similarity_block[j % sim_block_size].copy()
+                sims[sent_mask] = -np.inf  # exclude unassigned singletons as hypotheses
+                sims[j] = -np.inf
                 for att in sent_to_attempt[j]:
-                    sims[att] = -10000
-                hypo_idxs = list(np.argpartition(sims, -N)[-N:])
+                    sims[att] = -np.inf
+
+                # O(n) top-N: argpartition then sort only the top-N subset
+                k = min(N, len(sims))
+                top_k_pos = np.argpartition(sims, -k)[-k:]
+                valid = top_k_pos[sims[top_k_pos] > -np.inf]
+                hypo_idxs = valid[np.argsort(sims[valid])[::-1]].tolist()
 
                 sent_to_attempt[j].update(hypo_idxs)
                 if not skip:
-                    hypotheses = [sentences[k] for k in hypo_idxs]
-                    idx_to_samples[j] = []
-                    for hypo in hypotheses:
+                    idx_to_samples[j] = (pair_counter, hypo_idxs)
+                    for hypo_idx in hypo_idxs:
+                        hypo = sentences[hypo_idx]
                         inputs['text'].append(sent)
                         inputs['text_pair'].append(hypo)
                         inputs['text'].append(hypo)
                         inputs['text_pair'].append(sent)
-                        idx_to_samples[j].append(counter)
-                        idx_to_samples[j].append(counter + 1)
-                        counter += 2
+                    pair_counter += 2 * len(hypo_idxs)
+
             if j % checkpoint_steps == 0 or j == len(sentences) - 1:
-                dset = Dataset.from_dict(inputs)
-                all_labels = [l for l in
-                              tqdm(entailment_pipeline(KeyPairDataset(dset, 'text', 'text_pair'), batch_size=32),
-                                   total=len(inputs['text']), desc="Performing NLI")]
-                for sent_idx in tqdm(idx_to_samples):
-
-                    if idx_to_samples[sent_idx] != None:
-                        found = []
-                        entailment_counts = defaultdict(int)
-                        labels = [all_labels[k] for k in idx_to_samples[sent_idx]]
-                        for idx in range(0, len(labels), 2):
-                            if labels[idx]['label'] == 'ENTAILMENT':
-                                if labels[idx + 1]['label'] == 'ENTAILMENT':
-                                    found.append(
-                                        (sentence_to_cluster[inputs['text_pair'][idx_to_samples[sent_idx][idx]]],
-                                         np.log(labels[idx]['score']) + np.log(labels[idx + 1]['score'])))
-                                else:
-                                    # Unidirectional entailment, add to counter
-                                    entailment_counts[
-                                        sentence_to_cluster[inputs['text_pair'][idx_to_samples[sent_idx][idx]]]] += 1
-                        if len(found) == 0:
-
-                            if step == 0:
-                                cluster = cluster_max
-                                cluster_max += 1
-                            else:
-                                cluster = original_dframe.loc[sent_idx, 'cluster']
-                        else:
-                            cluster_idx = np.argmax([s for c, s in found])
-
-                            cluster = found[cluster_idx][0]
-                            del sent_to_attempt[sent_idx]
-                    else:
-                        cluster = original_dframe.loc[sent_idx, 'cluster']
-
-                    original_dframe.loc[sent_idx, 'cluster'] = cluster
-                    sentence_to_cluster[sentences[sent_idx]] = cluster
-                # Checkpoint
-                original_dframe.to_parquet(outfile_name, index=False)
-                counter = 0
+                cluster_max = _process_nli_batch(
+                    entailment_pipeline, inputs, idx_to_samples,
+                    clusters_arr, step, cluster_max, sent_to_attempt,
+                    original_dframe, outfile_name,
+                )
                 idx_to_samples = {}
-                # set up the inputs
-                inputs = {
-                    'text': [],
-                    'text_pair': []
-                }
-                sent_mask = original_dframe['cluster'].to_numpy() == -1
-                gc.collect()
+                inputs = {'text': [], 'text_pair': []}
+                pair_counter = 0
+                cluster_counts = Counter(clusters_arr.tolist())
+                sent_mask = clusters_arr == -1
+
     return original_dframe
 
 
@@ -654,10 +639,7 @@ def extract_claims_bulk(
             temperature=1.0,
             n_samples=1
         )
-        # See if this helps with memory issue
-        time.sleep(5)
-        gc.collect()
-        torch.cuda.empty_cache()
+
 
         # Get all of the factoids from each output
         factoids = []
