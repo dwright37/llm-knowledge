@@ -52,7 +52,8 @@ with open(FACTOID_EXTRACTION_PROMPT_PATH) as f:
 
 def embed_sentences(
     sentences: List[str],
-    model: str = "all-MiniLM-L6-v2"
+    model: str = "all-MiniLM-L6-v2",
+    show_progress: bool = True,
 ) -> np.ndarray:
     """
     Function to embed the sentences using the  sentence-transformer given model
@@ -64,7 +65,7 @@ def embed_sentences(
     embedder = SentenceTransformer(
         model, device="cuda" if torch.cuda.is_available() else "cpu"
     )
-    embeddings = embedder.encode(sentences, show_progress_bar=True)
+    embeddings = embedder.encode(sentences, show_progress_bar=show_progress)
     return embeddings
 
 
@@ -396,7 +397,7 @@ def cluster_entailment(
       - (start, hypo_idxs) in idx_to_samples replaces flat global-index list
     """
     sentences = original_dframe['factoid'].to_list()
-    embeddings = embed_sentences(sentences)
+    embeddings = embed_sentences(sentences, show_progress=False)
     sent_to_attempt = defaultdict(set)
 
     if 'cluster' not in original_dframe.columns:
