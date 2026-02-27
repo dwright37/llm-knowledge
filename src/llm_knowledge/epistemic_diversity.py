@@ -13,7 +13,6 @@ from os import path
 from collections import defaultdict
 resources_dir = path.dirname(__file__)
 import nltk
-import time
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
@@ -339,15 +338,13 @@ def _process_nli_batch(
     """
     if inputs['text']:
         dset = Dataset.from_dict(inputs)
-        all_labels = list(tqdm(
-            entailment_pipeline(KeyPairDataset(dset, 'text', 'text_pair'), batch_size=32),
-            total=len(inputs['text']),
-            desc="Performing NLI",
-        ))
+        print(f"Running NLI for step {step} on {len(inputs['text'])} sentences...")
+        all_labels = list(
+            entailment_pipeline(KeyPairDataset(dset, 'text', 'text_pair'), batch_size=32)
+        )
     else:
         all_labels = []
-
-    for sent_idx, sample_info in tqdm(idx_to_samples.items()):
+    for sent_idx, sample_info in idx_to_samples.items():
         if sample_info is None:
             cluster = int(clusters_arr[sent_idx])
         else:
@@ -357,8 +354,8 @@ def _process_nli_batch(
             for k, hypo_idx in enumerate(hypo_idxs):
                 fwd = all_labels[start + 2 * k]
                 bwd = all_labels[start + 2 * k + 1]
-                if fwd['label'] == 'ENTAILMENT':
-                    if bwd['label'] == 'ENTAILMENT':
+                if fwd['label'].upper() == 'ENTAILMENT':
+                    if bwd['label'].upper() == 'ENTAILMENT':
                         found.append((
                             int(clusters_arr[hypo_idx]),
                             np.log(fwd['score']) + np.log(bwd['score'])
@@ -420,8 +417,8 @@ def cluster_entailment(
         idx_to_samples = {}
         inputs = {'text': [], 'text_pair': []}
         pair_counter = 0
-
-        for j, sent in enumerate(tqdm(sentences)):
+        print(f"Finding candidates for step {step}...")
+        for j, sent in enumerate(sentences):
             if j % sim_block_size == 0:
                 similarity_block = cos_sim(
                     embeddings[j:j + sim_block_size], embeddings
@@ -460,7 +457,7 @@ def cluster_entailment(
                         inputs['text_pair'].append(sent)
                     pair_counter += 2 * len(hypo_idxs)
 
-            if j % checkpoint_steps == 0 or j == len(sentences) - 1:
+            if (j+1) % checkpoint_steps == 0 or j == len(sentences) - 1:
                 cluster_max = _process_nli_batch(
                     entailment_pipeline, inputs, idx_to_samples,
                     clusters_arr, step, cluster_max, sent_to_attempt,
@@ -470,7 +467,10 @@ def cluster_entailment(
                 inputs = {'text': [], 'text_pair': []}
                 pair_counter = 0
                 cluster_counts = Counter(clusters_arr.tolist())
-
+                cluster_len = len(cluster_counts)
+                print(f"Total clusters step {step}: {cluster_len}")
+    cluster_counts = Counter(clusters_arr.tolist())
+    cluster_len = len(cluster_counts)
     return original_dframe
 
 
@@ -609,61 +609,57 @@ def extract_claims_bulk(
         group_key: str = "stimulus_id",
         prompt: str = FACTOID_EXTRACTION_PROMPT,
 ):
-    all_dframes = []
+    # Phase 1: Build all messages across all groups in a single pass
+    msgs = []
+    chunks = []
+    chunk_topics = []
+    model_ids = []
+    idxs = []
 
-    # Iterate through groups
     for name, group in generation_dframe.groupby(group_key):
-        # Get the tokens
         responses = group['text'].tolist()
         topics = group['topic'].tolist()
-        msgs = []
-        chunk_topics = []
-        chunks = []
-        model_ids = []
-        idxs = []
-        for k,resp in enumerate(tqdm(responses)):
+        for k, resp in enumerate(tqdm(responses)):
             for chunk in chunk_document(resp, extraction_model.tokenizer, max_tokens=300):
                 msgs.append([{
                     "role": "user", "content": prompt.replace("{issue}", topics[k]).replace("{content}", chunk)
                 }])
-
                 chunks.append(chunk)
                 chunk_topics.append(name)
                 model_ids.append(group.iloc[k]['model_id'])
                 idxs.append(group.index[k])
-        outputs = extraction_model.generate(
-            msgs,
-            max_new_tokens=700,
-            do_sample=True,
-            top_p=0.9,
-            temperature=1.0,
-            n_samples=1
-        )
 
+    # Phase 2: Single generate call for all messages
+    outputs = extraction_model.generate(
+        msgs,
+        max_new_tokens=700,
+        do_sample=True,
+        top_p=0.9,
+        temperature=1.0,
+        n_samples=1
+    )
 
-        # Get all of the factoids from each output
-        factoids = []
-        out_topics = []
-        out_chunks = []
-        out_idxs = []
-        out_model_ids = []
-        for j,out in enumerate(outputs['text']):
-            factoids_curr = [s.strip() for s in re.split(r'\n+', out) if len(s.strip()) > 0]
-            out_topics.extend([chunk_topics[j]]*len(factoids_curr))
-            out_chunks.extend([chunks[j]] * len(factoids_curr))
-            out_idxs.extend([idxs[j]] * len(factoids_curr))
-            out_model_ids.extend([model_ids[j]] * len(factoids_curr))
-            factoids.extend(factoids_curr)
+    # Phase 3: Process outputs — outputs['text'][j] aligns with msgs[j] by construction
+    factoids = []
+    out_topics = []
+    out_chunks = []
+    out_idxs = []
+    out_model_ids = []
+    out_groups = []
+    for j, out in enumerate(outputs['text']):
+        factoids_curr = [s.strip() for s in re.split(r'\n+', out) if len(s.strip()) > 0]
+        out_topics.extend([chunk_topics[j]] * len(factoids_curr))
+        out_chunks.extend([chunks[j]] * len(factoids_curr))
+        out_idxs.extend([idxs[j]] * len(factoids_curr))
+        out_model_ids.extend([model_ids[j]] * len(factoids_curr))
+        out_groups.extend([chunk_topics[j]] * len(factoids_curr))
+        factoids.extend(factoids_curr)
 
-        out_dframe = pd.DataFrame()
-        out_dframe['group'] = [name] * len(factoids)
-        out_dframe['chunk'] = out_chunks
-        out_dframe['topic'] = out_topics
-        out_dframe['factoid'] = factoids
-        out_dframe['model_id'] = out_model_ids
-        out_dframe['original_index'] = out_idxs
-
-
-        all_dframes.append(out_dframe)
-    all_data_df = pd.concat(all_dframes, ignore_index=True)
-    return all_data_df
+    return pd.DataFrame({
+        'group': out_groups,
+        'chunk': out_chunks,
+        'topic': out_topics,
+        'factoid': factoids,
+        'model_id': out_model_ids,
+        'original_index': out_idxs,
+    })
