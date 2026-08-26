@@ -14,6 +14,22 @@ Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large 
 
 </div>
 
+## Knowledge Collapse Experiments
+
+### Important data
+
+- All of the data can be found at https://huggingface.co/datasets/dwright37/llm-knowledge-collapse
+- Model information is given in `experiments/data/model_categories.json`
+- All of the prompts for the various parts of the pipeline (local decomposition, wikipedia decomposition, and LLM as a judge) are under `experiments/data/prompts`
+
+### Important code
+
+- Backbone code for decomposition and clustering is under `src/epistemic_diversity.py`; you can install the package locally by running `$ pip install -e .[gpu]`
+- Code for running the different parts of the pipeline are under `experiments/generate.py`, `experiments/decompose.py`, `experiments/cluster_batched.py`, and `experiments/break_up_large_clusters.py`
+- Code for G-Eval is under `experiments/LLM_judge`
+- Code for generating the plots in the paper is in `experiments/final_plots.ipynb`
+
+
 ## Installation
 
 We recommend using `uv` for installation to make installing vLLM easier.
@@ -165,24 +181,6 @@ entropy,hillshannon,probabilities = calculate_diversity(
 
 Examples from our epistemic diversity paper can be be found under `src/experiments`. These examples demonstrate the three primary usages of this package: sampling many outputs from a set of propositions, 
 extracting and clustering claims from these outputs, and measuring epistemic diversity.
-
-## Knowledge Collapse Experiments
-
-### Important data
-
-- Most of the data in under `experiments/data`
-- The final clusters will be released soon
-- Prompt templates are given at `experiments/data/issuebench_templates.json`
-- Model information is given in `experiments/data/model_categories.json`
-- All topics are listed in `experiments/data/topics.txt`
-- All of the prompts for the various parts of the pipeline (local decomposition, wikipedia decomposition, and LLM as a judge) are under `experiments/data/prompts`
-
-### Important code
-
-- Backbone code for decomposition and clustering is under `src/epistemic_diversity.py`; you can install the package locally by running `$ pip install -e .[gpu]`
-- Code for running the different parts of the pipeline are under `experiments/generate.py`, `experiments/decompose.py`, `experiments/cluster_batched.py`, and `experiments/break_up_large_clusters.py`
-- Code for G-Eval is under `experiments/LLM_judge`
-- Code for generating the plots in the paper is in `experiments/final_plots.ipynb`
 
 # Citation
 The code in this package is derived from our recent preprint and our [EMNLP Findings 2024 paper](https://aclanthology.org/2024.findings-emnlp.995/):
