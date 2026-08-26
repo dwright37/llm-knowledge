@@ -6,7 +6,7 @@
 #### A python package for extracting knowledge from LLMs and measuring epistemic diversity.
 
 
-Associated with the papers "Epistemic Diversity and Knowledge Collapse in Large Language Models" [(Wright et al. 2025)](https://arxiv.org/pdf/2510.04226) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
+Associated with the papers "What and Whose Knowledge? Measuring Epistemic Diversity in Large Language Models" [(Wright et al., EMNLP 2026)](https://arxiv.org/pdf/2510.04226) and "LLM Tropes: Revealing Fine Grained Values and Opinions in Large Language Models" [(Wright et al. 2024)](https://aclanthology.org/2024.findings-emnlp.995/)
 
 [![ArXiv](https://img.shields.io/badge/ArXiv-2510.04226-B31B1B.svg?style=flat-square)](https://arxiv.org/pdf/2510.04226) &nbsp; [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-dwright37/llm--knowledge--collapse-FFD700.svg?style=flat-square)](https://huggingface.co/datasets/dwright37/llm-knowledge-collapse) &nbsp; [![PyPI - Version](https://img.shields.io/pypi/v/llm-knowledge)](https://pypi.org/project/llm-knowledge/)
 
@@ -186,12 +186,13 @@ extracting and clustering claims from these outputs, and measuring epistemic div
 The code in this package is derived from our recent preprint and our [EMNLP Findings 2024 paper](https://aclanthology.org/2024.findings-emnlp.995/):
 
 ```
-@article{wright2025epistemicdiversity,
-      title={Epistemic Diversity and Knowledge Collapse in Large Language Models},
+@inproceedings{wright2026epistemicdiversity,
+      title={What and Whose Knowledge? Measuring Epistemic Diversity in Large Language Models},
       author={Dustin Wright and Sarah Masud and Jared Moore and Srishti Yadav
                 and Maria Antoniak and Chan Young Park and Isabelle Augenstein},
-      year={2025},
-      journal={arXiv preprint arXiv:2510.04226},
+      year={2026},
+      booktitle = {EMNLP},
+      publisher = {Association for Computational Linguistics}
 }
 ```
 
